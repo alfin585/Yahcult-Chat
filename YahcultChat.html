@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YAHCULT CHAT</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #e94560;
+            --primary-light: #ff6b81;
+            --dark: #0f0f23;
+            --darker: #0a0a16;
+            --light: #f8f8f8;
+            --light-bg: #f5f5f5;
+            --light-text: #333333;
+            --light-input: #ffffff;
+            --accent: #533d8b;
+            --current-bg: var(--cream-bg);
+            --current-text: var(--light-text);
+            --current-input-bg: var(--light-input);
+            --cream-bg: #FFF8F0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            background-color: var(--current-bg);
+            color: var(--current-text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+        
+        body.dark-mode {
+            --current-bg: var(--dark);
+            --current-text: white;
+            --current-input-bg: rgba(255,255,255,0.1);
+        }
+        
+        /* Tampilan Login */
+        .auth-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 20px;
+            background-color: var(--cream-bg);
+        }
+        
+        .auth-box {
+            background: var(--cream-bg);
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .auth-title {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 700;
+        }
+        
+        .auth-input {
+            width: 100%;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 12px;
+            background: var(--light-input);
+            color: var(--light-text);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .auth-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+        }
+        
+        .auth-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(233, 69, 96, 0.3);
+        }
+        
+        /* Tampilan Chat */
+        .chat-screen {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            background-color: var(--current-bg);
+        }
+        
+        .header {
+            background-color: var(--current-bg);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-title {
+            color: var(--primary);
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        
+        .chat-container {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: var(--current-bg);
+        }
+        
+        .message {
+            max-width: 85%;
+            margin-bottom: 12px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-break: break-word;
+            line-height: 1.4;
+            position: relative;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeInUp 0.3s ease-out forwards;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .message:hover {
+            transform: translateY(-2px);
+        }
+        
+        .message.selected {
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+        
+        .received {
+            background-color: var(--accent);
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+            color: white;
+        }
+        
+        .dark-mode .received {
+            background-color: var(--accent);
+            color: white;
+        }
+        
+        .sent {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+            color: white;
+        }
+        
+        .sender-name {
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+        
+        .dark-mode .sender-name {
+            opacity: 0.9;
+        }
+        
+        .message-time {
+            font-size: 0.6rem;
+            opacity: 0.7;
+            text-align: right;
+            margin-top: 4px;
+        }
+        
+        .reply-indicator {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            background-color: rgba(0,0,0,0.1);
+            border-radius: 8px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .reply-indicator i {
+            margin-right: 4px;
+        }
+        
+        .reply-message {
+            font-size: 0.8rem;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--primary);
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 0 8px 8px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .reply-sender {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .input-area {
+            display: flex;
+            padding: 12px 15px;
+            background-color: var(--current-bg);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            align-items: center;
+        }
+        
+        #message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 24px;
+            background: var(--current-input-bg);
+            color: var(--current-text);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        #message-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+        }
+        
+        .input-buttons {
+            display: flex;
+            margin-left: 8px;
+        }
+        
+        .input-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            margin-left: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .input-btn:hover {
+            transform: scale(1.05);
+            background-color: var(--primary-light);
+        }
+        
+        #voice-btn {
+            background-color: var(--accent);
+        }
+        
+        #voice-btn:hover {
+            background-color: #6349a3;
+        }
+        
+        #voice-btn.listening {
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Mode Toggle */
+        .mode-toggle {
+            background: none;
+            border: none;
+            color: var(--current-text);
+            font-size: 1.2rem;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .mode-toggle:hover {
+            opacity: 1;
+            transform: rotate(30deg);
+        }
+        
+        /* Menu Options */
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .menu-btn:hover {
+            transform: rotate(90deg);
+        }
+        
+        .menu-options {
+            display: none;
+            position: absolute;
+            right: 15px;
+            top: 60px;
+            background-color: var(--current-input-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+            overflow: hidden;
+            min-width: 180px;
+        }
+        
+        .menu-options.show {
+            display: block;
+        }
+        
+        .menu-option {
+            padding: 12px 20px;
+            font-size: 0.9rem;
+            color: var(--current-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        
+        .menu-option:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
+        
+        .menu-option i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .notification.show {
+            opacity: 1;
+        }
+        
+        /* Reply Preview */
+        .reply-preview {
+            display: none;
+            padding: 8px 15px;
+            background-color: var(--current-input-bg);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .reply-preview-content {
+            flex: 1;
+            font-size: 0.85rem;
+            color: var(--current-text);
+            opacity: 0.8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 10px;
+        }
+        
+        .reply-preview-text {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .cancel-reply {
+            color: var(--primary);
+            background: none;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(233, 69, 96, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0); }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+        
+        .dark-mode ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+        }
+        
+        /* Responsive */
+        @media (max-width: 480px) {
+            .auth-box {
+                padding: 30px 20px;
+                border-radius: 15px;
+            }
+            
+            .auth-title {
+                font-size: 1.5rem;
+            }
+            
+            .message {
+                max-width: 90%;
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+            
+            .input-area {
+                padding: 10px 12px;
+            }
+            
+            #message-input {
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+            
+            .input-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tampilan Login -->
+    <div class="auth-container" id="auth-container">
+        <div class="auth-box">
+            <h1 class="auth-title">YAHCULT CHAT</h1>
+            <input type="text" id="username-input" class="auth-input" placeholder="Masukkan username Anda">
+            <button id="enter-btn" class="auth-btn">Masuk Chat</button>
+        </div>
+    </div>
+    
+    <!-- Tampilan Chat -->
+    <div class="chat-screen" id="chat-screen">
+        <div class="header">
+            <div class="header-content">
+                <div class="app-title">YAHCULT</div>
+            </div>
+            <div class="header-actions">
+                <button id="mode-toggle" class="mode-toggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="menu-btn" class="menu-btn">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
+            <div class="menu-options" id="menu-options">
+                <div class="menu-option" id="clear-chat">
+                    <i class="fas fa-broom"></i>
+                    <span>Bersihkan Chat</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-container" id="chat-container">
+            <!-- Messages will appear here -->
+        </div>
+        
+        <div class="reply-preview" id="reply-preview">
+            <div class="reply-preview-content">
+                Membalas <span class="reply-preview-text" id="reply-preview-text"></span>
+            </div>
+            <button class="cancel-reply" id="cancel-reply">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Ketik pesan...">
+            <div class="input-buttons">
+                <button id="voice-btn" class="input-btn" title="Voice Input">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <button id="send-btn" class="input-btn" title="Send Message">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="notification" id="notification">
+            Pesan baru masuk
+        </div>
+    </div>
+
+    <script>
+        // Konfigurasi Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyBTgBTsQ0Fj2qTyDFLEqUxrwg75Ai9WrVQ",
+  authDomain: "yahcult-chat.firebaseapp.com",
+  databaseURL: "https://yahcult-chat-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "yahcult-chat",
+  storageBucket: "yahcult-chat.firebasestorage.app",
+  messagingSenderId: "298480611101",
+  appId: "1:298480611101:web:b73a121c231c3be339bbf4"
+};
+        
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // Elemen DOM
+        const authContainer = document.getElementById('auth-container');
+        const chatScreen = document.getElementById('chat-screen');
+        const usernameInput = document.getElementById('username-input');
+        const enterBtn = document.getElementById('enter-btn');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const voiceBtn = document.getElementById('voice-btn');
+        const chatContainer = document.getElementById('chat-container');
+        const modeToggle = document.getElementById('mode-toggle');
+        const menuBtn = document.getElementById('menu-btn');
+        const menuOptions = document.getElementById('menu-options');
+        const clearChatBtn = document.getElementById('clear-chat');
+        const notification = document.getElementById('notification');
+        const replyPreview = document.getElementById('reply-preview');
+        const replyPreviewText = document.getElementById('reply-preview-text');
+        const cancelReply = document.getElementById('cancel-reply');
+        
+        // Variabel
+        let username = '';
+        let recognition;
+        let isListening = false;
+        let hasChangedName = false;
+        let lastMessageTime = 0;
+        let replyingTo = null;
+        let selectedMessage = null;
+        
+        // Mode Toggle
+        modeToggle.addEventListener('click', toggleColorMode);
+        
+        function toggleColorMode() {
+            const isDarkMode = document.body.classList.toggle('dark-mode');
+            
+            if (isDarkMode) {
+                modeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                modeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            }
+            
+            // Simpan preferensi mode
+            localStorage.setItem('darkMode', isDarkMode);
+        }
+        
+        // Check for saved color mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            modeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+        
+        // Check for speech recognition support
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'id-ID'; // Set language to Indonesian
+            
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                messageInput.value = transcript;
+                voiceBtn.classList.remove('listening');
+                isListening = false;
+                messageInput.placeholder = "Ketik pesan...";
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error', event.error);
+                voiceBtn.classList.remove('listening');
+                isListening = false;
+                messageInput.placeholder = "Ketik pesan...";
+            };
+            
+            recognition.onend = function() {
+                if (isListening) {
+                    recognition.start();
+                } else {
+                    messageInput.placeholder = "Ketik pesan...";
+                }
+            };
+        } else {
+            voiceBtn.style.display = 'none';
+            console.log('Speech recognition not supported');
+        }
+        
+        // Handler tombol voice
+        voiceBtn.addEventListener('click', toggleVoiceRecognition);
+        
+        function toggleVoiceRecognition() {
+            if (!recognition) {
+                alert('Voice recognition not supported in your browser');
+                return;
+            }
+            
+            if (isListening) {
+                recognition.stop();
+                voiceBtn.classList.remove('listening');
+                isListening = false;
+                messageInput.placeholder = "Ketik pesan...";
+            } else {
+                recognition.start();
+                voiceBtn.classList.add('listening');
+                isListening = true;
+                messageInput.placeholder = "Mendengarkan...";
+            }
+        }
+        
+        // Handler tombol masuk
+        enterBtn.addEventListener('click', () => {
+            username = usernameInput.value.trim();
+            
+            if (!username) {
+                alert('Harap masukkan username');
+                return;
+            }
+            
+            // Simpan username ke localStorage untuk memeriksa perubahan nama
+            const savedUsername = localStorage.getItem('username');
+            if (savedUsername && savedUsername !== username) {
+                if (hasChangedName) {
+                    alert('Anda hanya bisa mengganti nama sekali saja');
+                    usernameInput.value = savedUsername;
+                    return;
+                }
+                hasChangedName = true;
+            }
+            
+            localStorage.setItem('username', username);
+            showChatScreen(username);
+        });
+        
+        // Handler kirim pesan
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Tampilkan layar chat
+        function showChatScreen(username) {
+            authContainer.style.display = 'none';
+            chatScreen.style.display = 'flex';
+            
+            // Load pesan
+            loadMessages();
+            
+            // Fokus ke input pesan
+            messageInput.focus();
+        }
+        
+        // Fungsi kirim pesan
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            
+            if (!text) return;
+            
+            // Buat data pesan
+            const messageData = {
+                text: text,
+                sender: username,
+                timestamp: Date.now()
+            };
+            
+            // Tambahkan reply data jika sedang membalas pesan
+            if (replyingTo) {
+                messageData.replyTo = {
+                    id: replyingTo.id,
+                    sender: replyingTo.sender,
+                    text: replyingTo.text
+                };
+            }
+            
+            // Kirim ke Firebase
+            database.ref('messages').push(messageData);
+            
+            // Reset input dan reply
+            messageInput.value = '';
+            cancelReplyAction();
+        }
+        
+        // Muat pesan
+        function loadMessages() {
+            database.ref('messages').on('child_added', snapshot => {
+                const msg = snapshot.val();
+                displayMessage(msg.text, msg.sender, msg.timestamp, snapshot.key, msg.replyTo);
+                
+                // Tampilkan notifikasi jika pesan baru dari orang lain
+                if (msg.sender !== username && msg.timestamp > lastMessageTime) {
+                    showNotification(`${msg.sender}: ${msg.text}`);
+                    lastMessageTime = msg.timestamp;
+                }
+            });
+            
+            // Handle penghapusan pesan tanpa refresh
+            database.ref('messages').on('child_removed', snapshot => {
+                const messageId = snapshot.key;
+                const messageElement = document.querySelector(`.message[data-id="${messageId}"]`);
+                if (messageElement) {
+                    messageElement.remove();
+                }
+            });
+        }
+        
+        // Tampilkan pesan
+        function displayMessage(text, sender, timestamp, messageId, replyTo) {
+            const isCurrentUser = sender === username;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
+            messageDiv.dataset.id = messageId;
+            
+            // Tambahkan event click untuk reply
+            messageDiv.addEventListener('click', () => {
+                // Hapus seleksi sebelumnya
+                if (selectedMessage) {
+                    selectedMessage.classList.remove('selected');
+                }
+                
+                // Set seleksi baru
+                messageDiv.classList.add('selected');
+                selectedMessage = messageDiv;
+                
+                // Set pesan yang akan dibalas
+                replyingTo = {
+                    id: messageId,
+                    sender: sender,
+                    text: text
+                };
+                
+                // Tampilkan preview reply
+                replyPreviewText.textContent = `${sender}: ${text.length > 30 ? text.substring(0, 30) + '...' : text}`;
+                replyPreview.style.display = 'flex';
+                
+                // Fokus ke input
+                messageInput.focus();
+            });
+            
+            // Tambahkan reply message jika ada
+            if (replyTo) {
+                const replyMessageDiv = document.createElement('div');
+                replyMessageDiv.className = 'reply-message';
+                
+                const replySenderSpan = document.createElement('span');
+                replySenderSpan.className = 'reply-sender';
+                replySenderSpan.textContent = replyTo.sender + ': ';
+                
+                const replyTextSpan = document.createElement('span');
+                replyTextSpan.textContent = replyTo.text;
+                
+                replyMessageDiv.appendChild(replySenderSpan);
+                replyMessageDiv.appendChild(replyTextSpan);
+                messageDiv.appendChild(replyMessageDiv);
+            }
+            
+            if (!isCurrentUser) {
+                const senderName = document.createElement('div');
+                senderName.className = 'sender-name';
+                senderName.textContent = sender;
+                messageDiv.appendChild(senderName);
+            }
+            
+            const messageText = document.createElement('div');
+            messageText.textContent = text;
+            messageDiv.appendChild(messageText);
+            
+            // Add timestamp
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            const timeString = new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            timeDiv.textContent = timeString;
+            messageDiv.appendChild(timeDiv);
+            
+            chatContainer.appendChild(messageDiv);
+            
+            // Scroll ke bawah
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Tampilkan notifikasi
+        function showNotification(message) {
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Menu options
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menuOptions.classList.toggle('show');
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', () => {
+            menuOptions.classList.remove('show');
+        });
+        
+        // Clear chat
+        clearChatBtn.addEventListener('click', () => {
+            if (confirm('Apakah Anda yakin ingin menghapus semua chat?')) {
+                database.ref('messages').remove();
+                menuOptions.classList.remove('show');
+            }
+        });
+        
+        // Cancel reply action
+        cancelReply.addEventListener('click', cancelReplyAction);
+        
+        function cancelReplyAction() {
+            if (selectedMessage) {
+                selectedMessage.classList.remove('selected');
+                selectedMessage = null;
+            }
+            replyingTo = null;
+            replyPreview.style.display = 'none';
+        }
+        
+        // Check for saved username on load
+        window.addEventListener('load', () => {
+            const savedUsername = localStorage.getItem('username');
+            if (savedUsername) {
+                usernameInput.value = savedUsername;
+                hasChangedName = true;
+            }
+        });
+    </script>
+</body>
+</html>
